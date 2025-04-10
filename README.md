@@ -1,3 +1,6 @@
+<p align="center">
+<img src="EducationGPT.jpg">
+</p>
     # Multilingual AI Voice Chat Assistant for Kids from (Gemini-2.5-pro)
 
     This project is a web-based chat application built with Flask that allows users to interact with an AI assistant (OpenAI GPT-4o-mini) via text or voice in multiple languages (Russian, English, French). It features real-time speech recognition, image generation, image search, video search with content filtering, and audio responses.
