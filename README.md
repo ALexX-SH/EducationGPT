@@ -86,4 +86,4 @@ This project is a web-based chat application built with Flask that allows users 
 
 ## Configuration
 
-All necessary API keys and the Google Custom Search Engine URL must be configured in the `.env` file asshown in `.env.example`. The application will log warnings if keys are missing but might still run withlimited functionality.
+All necessary API keys and the Google Custom Search Engine URL must be configured in the `.env` file as shown in `.env.example`. The application will log warnings if keys are missing but might still run withlimited functionality.
