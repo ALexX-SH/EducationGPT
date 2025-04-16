@@ -1,0 +1,1188 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voice Chat with GPT</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            background-color: #ffeb3b;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            box-sizing: border-box;
+        }
+        .chat-container {
+            width: 100%;
+            max-width: 1000px;
+            min-height: 80vh;
+            background: #fff;
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+            border: 5px dashed #ff4081;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-box {
+            flex-grow: 1;
+            height: 500px;
+            overflow-y: auto;
+            border: 2px solid #4caf50;
+            border-radius: 10px;
+            padding: 10px;
+            margin-bottom: 10px;
+            background: #e1f5fe;
+            font-size: 18px;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            display: block;
+            max-width: 80%;
+            clear: both;
+            font-size: 18px;
+            word-wrap: break-word;
+        }
+        .user-message {
+            text-align: right;
+            color: #ff5722;
+            background: #ffe0b2;
+            float: right;
+            margin-left: auto;
+        }
+        .bot-message {
+            text-align: left;
+            color: #3f51b5;
+            background: #bbdefb;
+            float: left;
+            margin-right: auto;
+        }
+        .image-message {
+            text-align: center;
+            clear: both;
+            margin: 10px auto;
+            max-width: 100%;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+        }
+        .image-message img {
+            max-width: 80%;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            flex-grow: 1;
+            object-fit: cover;
+            min-width: 150px;
+        }
+        .video-container-message {
+            display: block;
+            text-align: center;
+            clear: both;
+            margin: 10px auto;
+            max-width: 100%;
+            gap: 15px;
+            background-color: #f0f0f0;
+            padding: 10px;
+            border-radius: 10px;
+        }
+        .video-wrapper {
+            width: 100%;
+            max-width: 90%;
+            margin: 0 auto 15px auto;
+            position: relative;
+            padding-bottom: 56.25%;
+            height: 0;
+            overflow: hidden;
+        }
+        .video-wrapper iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            border: 0;
+        }
+        .input-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: auto;
+        }
+        .input-row {
+            display: flex;
+            gap: 10px;
+        }
+        .input-row input {
+            flex: 1;
+            padding: 10px;
+            border: 2px solid #ff4081;
+            border-radius: 10px;
+            font-size: 16px;
+        }
+        .input-row button {
+            padding: 10px 15px;
+            background: #ff4081;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background 0.3s;
+            white-space: nowrap;
+        }
+        .input-row button:hover {
+            background: #e91e63;
+        }
+        #help-button {
+            padding: 8px 15px;
+            background: #4caf50;
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.3s;
+            align-self: center;
+            margin-top: 5px;
+        }
+        #help-button:hover {
+            background: #388e3c;
+        }
+        .status-message {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            margin: 5px 0;
+            font-size: 14px;
+            min-height: 1.2em;
+        }
+        .error-message {
+            color: #d9534f;
+            text-align: center;
+            margin: 10px 0;
+        }
+        .rainbow {
+            position: absolute;
+            top: -20px;
+            left: 0;
+            right: 0;
+            height: 50px;
+            background: linear-gradient(to right, #ff0000, #ff7f00, #ffff00, #00ff00, #00ffff, #0000ff, #4b0082, #9400d3);
+            border-radius: 15px 15px 0 0;
+        }
+        .loading-indicator {
+            text-align: center;
+            font-size: 18px;
+            color: #3f51b5;
+            margin: 10px 0;
+            display: none;
+        }
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .help-modal {
+            background: #fff;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.3);
+            border: 3px solid #4caf50;
+            max-width: 600px;
+            width: 90%;
+            position: relative;
+            font-family: sans-serif;
+            color: #333;
+            line-height: 1.6;
+        }
+        .help-modal h2 {
+            color: #ff4081;
+            text-align: center;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        .help-modal ul {
+            list-style: none;
+            padding: 0;
+        }
+        .help-modal li {
+            margin-bottom: 10px;
+            background: #e1f5fe;
+            padding: 8px;
+            border-radius: 5px;
+        }
+        .help-modal code {
+            background: #eee;
+            padding: 2px 5px;
+            border-radius: 3px;
+            font-family: monospace;
+        }
+        .modal-close-button {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: #ff4081;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            font-size: 20px;
+            line-height: 30px;
+            text-align: center;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .modal-close-button:hover {
+            background: #e91e63;
+        }
+        .modal-active {
+            display: flex;
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="rainbow"></div>
+        <h1 style="color: #ff4081; text-align: center;">🎉 Voice Chat with GPT 🎉</h1>
+        <div class="chat-box" id="chat-box"></div>
+        <div id="status-message" class="status-message"></div>
+        <div id="loading-indicator" class="loading-indicator" style="display: none;">PROCESSING</div>
+        <div class="input-container">
+            <div class="input-row">
+                <input type="text" id="user-input" placeholder="Enter message or command..." onkeypress="handleKeyPress(event)">
+                <button onclick="sendMessage()">🚀 Send</button>
+                <button id="mic-button" onclick="toggleMicrophone()">🎤 Turn Mic On</button>
+            </div>
+            <button id="help-button" onclick="openHelpModal()">❓ Say: Chat Help / Tchat Aide / Чат Помощь</button>
+        </div>
+    </div>
+
+    <div id="help-modal-overlay" class="modal-overlay">
+        <div class="help-modal">
+            <button class="modal-close-button" onclick="closeHelpModal()">&times;</button>
+            <h2>Help with Commands</h2>
+            <ul>
+                <li>
+                    <strong>🎤 Voice Input:</strong><br>
+                    Activate: say <code>чат приём</code> / <code>chat activate</code> / <code>tchat activer</code>.<br>
+                    Deactivate: say <code>чат отбой</code> / <code>chat deactivate</code> / <code>tchat désactiver</code>.<br>
+                    <em>(When voice is active, the <code>чат</code>/<code>chat</code>/<code>tchat</code> prefix should not be used.)</em>
+                </li>
+                <li>
+                     <strong> Language Switching:</strong><br>
+                     Русский: <code>чат говори на Русском</code><br>
+                     English: <code>chat speak English</code><br>
+                     French: <code>tchat parle français</code>
+                 </li>
+                 <li>
+                    <strong>🖼️ Image Generation:</strong><br>
+                    Say or write: <code>чат нарисуй [what]</code> / <code>tchat dessine [quoi]</code> and so on.<br>
+                    (Examples of keywords: <code>изобрази</code>, <code>создай картинку</code>, <code>generate image</code>, <code>crée une image</code>...)
+                </li>
+                <li>
+                    <strong>🖼️ Image Search:</strong><br>
+                    Say or write: <code>чат покажи картинку [что]</code> / <code>chat find image [what]</code> / <code>tchat cherche image [quoi]</code>.<br>
+                    (Examples of keywords: <code>картинка</code>, <code>найди картинку</code>, <code>picture</code>, <code>search image</code>, <code>photo</code>, <code>trouve image</code>...)
+                </li>
+                <li>
+                    <strong>▶️ Video Search:</strong><br>
+                    Say or write: <code>чат найди видео [что]</code> / <code>chat search video [what]</code> / <code>tchat cherche vidéo [quoi]</code>.<br>
+                    (Examples of keywords: <code>видео</code>, <code>покажи клип</code>, <code>show video</code>, <code>clip</code>, <code>vidéo</code>, <code>montre vidéo</code>...)
+                </li>
+                <li>
+                    <strong>❓ Show this help:</strong><br>
+                    Say or write: <code>чат помощь</code> / <code>chat help</code> / <code>tchat aide</code>.
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let voiceChatActive = false;
+        let micActive = false;
+        let recognition = null;
+        let speechRecognitionSupported = false;
+        let loadingInterval;
+        let recognitionRestartCount = 0;
+        const MAX_RECOGNITION_RESTARTS = 10;
+        let lastBotLanguage = 'ru';
+        let manualStopInProgress = false;
+        let speechPauseTimer = null;
+        const SPEECH_PAUSE_DURATION = 4000;
+        let interimTranscript = '';
+        let languageChangeRestartPending = false; // Flag for restarting after language change
+        let currentAudioPlayer = null; // Keep track of the currently playing audio
+        let audioQueue = []; // Queue for pending audio URLs
+        let isAudioPlaying = false; // Flag to indicate if bot audio is playing
+        let recognitionWasStoppedForAudio = false; // Flag if recognition stopped due to audio
+
+        const PREFIX_KEYWORDS_JS = ["чат", "chat", "tchat"];
+
+        const VOICE_ON_KEYWORDS_JS = [
+            "приём", "активация",
+            "activate", "voice on", "start voice",
+            "activer", "activation", "voix on"
+        ];
+
+        const VOICE_OFF_KEYWORDS_JS = [
+            "отбой", "деактивация",
+            "deactivate", "voice off", "stop voice",
+            "désactiver", "désactivation", "voix off"
+        ];
+
+        const IMAGE_KEYWORDS_JS = [
+            "нарисуй", "создай картинку", "изобрази", "покажи", "сделай картинку", "нарисуй мне", "сгенерируй изображение",
+            "draw", "paint", "generate image", "create image", "show me image", "picture of",
+            "dessine", "dessine-moi", "crée une image", "génère une image", "montre-moi une image", "image de"
+        ];
+
+        const HELP_KEYWORDS_JS = [
+            "помощь", "справка",
+            "help",
+            "aide"
+        ];
+
+        // Keywords for language switching
+        const LANG_RU_KEYWORDS = ["говори по-русски", "русский язык", "говори на русском"];
+        const LANG_EN_KEYWORDS = ["speak English", "english language"];
+        const LANG_FR_KEYWORDS = ["parle français", "langue française"];
+
+        // New keywords for image search (must match backend)
+        const FIND_IMAGE_KEYWORDS_JS = [
+            // Russian
+            "картинка", "картинку", "найди картинку", "покажи картинку",
+            // English
+            "picture", "image", "find picture", "find image", "search picture", "search image",
+            // French
+            "image", "photo", "cherche image", "trouve image"
+        ];
+
+        // Keywords for video search (must match backend)
+        const FIND_VIDEO_KEYWORDS_JS = [
+            // Russian
+            "видео", "найди видео", "покажи видео", "клип", "ролик",
+            // English
+            "video", "find video", "search video", "show video", "clip",
+            // French
+            "vidéo", "cherche vidéo", "trouve vidéo", "montre vidéo", "clip"
+        ];
+
+        // Keywords for video (placeholder for now)
+        // const FIND_VIDEO_KEYWORDS_JS = [ ... ];
+
+        function checkSpeechRecognitionSupport() {
+            if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+                speechRecognitionSupported = true;
+                document.getElementById('mic-button').disabled = false;
+            } else {
+                document.getElementById('status-message').textContent = "Your browser does not support speech recognition";
+                document.getElementById('mic-button').disabled = true;
+            }
+        }
+
+        function startVoiceRecognition() {
+            if (!speechRecognitionSupported || micActive) return;
+            console.log("[DEBUG] startVoiceRecognition called");
+
+            if (recognition) {
+                try {
+                    console.log("[DEBUG] Stopping existing recognition instance before starting new one...");
+                    recognition.onend = null;
+                    recognition.stop();
+                } catch (e) { console.warn("[DEBUG] Error stopping existing recognition:", e); }
+                recognition = null;
+            }
+
+            manualStopInProgress = false;
+            recognitionRestartCount = 0;
+            clearTimeout(speechPauseTimer);
+            speechPauseTimer = null;
+            interimTranscript = '';
+
+            try {
+                recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+                console.log("[DEBUG] SpeechRecognition object created.");
+            } catch (e) {
+                console.error("[DEBUG] Failed to create SpeechRecognition object:", e);
+                document.getElementById('status-message').textContent = "Speech recognition initialization error.";
+                return;
+            }
+
+            const langMap = {
+                'ru': 'ru-RU',
+                'en': 'en-US',
+                'fr': 'fr-FR'
+            };
+            const recognitionLang = langMap[lastBotLanguage] || 'ru-RU';
+            recognition.lang = recognitionLang;
+            console.log(`[DEBUG] Recognition language set to: ${recognition.lang} (based on last bot lang: ${lastBotLanguage})`);
+
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.maxAlternatives = 1;
+
+            recognition.onstart = function() {
+                console.log("[DEBUG] recognition.onstart event fired.");
+                micActive = true;
+                document.getElementById('mic-button').textContent = "🔇 Turn Mic Off";
+                document.getElementById('status-message').textContent = `Mic is active (${recognition.lang}). Speak now...`;
+                console.log("[DEBUG] micActive set to true.");
+            };
+
+            recognition.onresult = function(event) {
+                // *** ADD CHECK HERE: Ignore results if audio is playing ***
+                if (isAudioPlaying) {
+                    console.log("[DEBUG] Discarding recognition result during audio playback.");
+                    // Optionally clear any interim transcript display if needed
+                    // document.getElementById('user-input').value = '';
+                    return; // Stop processing this event
+                }
+                // *** End of added check ***
+
+                console.log("[DEBUG] recognition.onresult event fired.");
+                clearTimeout(speechPauseTimer);
+
+                let currentFinalTranscript = '';
+                interimTranscript = '';
+
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    const transcriptPart = event.results[i][0].transcript;
+                    if (event.results[i].isFinal) {
+                        currentFinalTranscript += transcriptPart + ' ';
+                    } else {
+                        interimTranscript += transcriptPart;
+                    }
+                }
+
+                currentFinalTranscript = currentFinalTranscript.trim();
+                interimTranscript = interimTranscript.trim();
+
+                const displayTranscript = currentFinalTranscript || interimTranscript;
+                 if (displayTranscript) {
+                    document.getElementById('user-input').value = displayTranscript;
+                     console.log(`[DEBUG] Interim: "${interimTranscript}" | Final: "${currentFinalTranscript}" -> Displaying: "${displayTranscript}"`);
+                     document.getElementById('status-message').textContent = "Recognizing...";
+                 }
+
+                if (currentFinalTranscript) {
+                    console.log("[DEBUG] Final result received:", currentFinalTranscript);
+                    handleVoiceCommand(currentFinalTranscript);
+                    document.getElementById('user-input').value = '';
+                    interimTranscript = '';
+                } else if (interimTranscript) {
+                    console.log("[DEBUG] Interim result:", interimTranscript, " - Setting pause timer.");
+                    speechPauseTimer = setTimeout(() => {
+                        console.log("[DEBUG] Speech pause timer fired after 4 seconds.");
+                        const finalizedText = document.getElementById('user-input').value.trim();
+                        if (finalizedText) {
+                             console.log("[DEBUG] Finalizing text due to pause:", finalizedText);
+                             handleVoiceCommand(finalizedText);
+                             document.getElementById('user-input').value = '';
+                             interimTranscript = '';
+                        } else {
+                             console.log("[DEBUG] Pause timer fired, but input is empty. Ignoring.");
+                        }
+                        speechPauseTimer = null;
+                    }, SPEECH_PAUSE_DURATION);
+                }
+            };
+
+            recognition.onerror = function(event) {
+                console.error("[DEBUG] recognition.onerror event fired. Error:", event.error);
+                clearTimeout(speechPauseTimer);
+                speechPauseTimer = null;
+
+                let statusMsg = "Recognition error: " + event.error;
+
+                if (event.error === 'audio-capture' || event.error === 'not-allowed' || event.error === 'service-not-allowed' || event.error === 'network' || event.error === 'aborted') {
+                    console.warn(`[DEBUG] Critical error (${event.error}), stopping microphone.`);
+                    if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
+                        statusMsg = "Microphone access denied. Check browser settings.";
+                    } else if (event.error === 'aborted'){
+                        statusMsg = "Recognition aborted.";
+                    } else {
+                        statusMsg = "Microphone disabled due to error: " + event.error;
+                    }
+                     if (recognition && micActive) {
+                         manualStopInProgress = true;
+                         toggleMicrophone();
+                     } else if (!micActive && recognition) {
+                         try { recognition.stop(); } catch(e){}
+                         recognition = null;
+                         micActive = false;
+                         document.getElementById('mic-button').textContent = "🎤 Turn Mic On";
+                     }
+                 } else if (event.error === 'no-speech') {
+                     console.log("[DEBUG] Non-critical error: no-speech.");
+                     statusMsg = "Speech not recognized. Please try again.";
+                 } else {
+                     statusMsg = "Recognition error: " + event.error;
+                 }
+                 document.getElementById('status-message').textContent = statusMsg;
+            };
+
+            recognition.onend = function() {
+                console.log(`[DEBUG] recognition.onend event fired. manualStopInProgress: ${manualStopInProgress}, languageChangeRestartPending: ${languageChangeRestartPending}, micActive (before reset): ${micActive}, restartCount: ${recognitionRestartCount}, recognitionWasStoppedForAudio: ${recognitionWasStoppedForAudio}`);
+                const wasMicActive = micActive;
+                micActive = false; // Tentatively set to false
+
+                clearTimeout(speechPauseTimer);
+                speechPauseTimer = null;
+
+                // --- Check if restart is needed due to language change --- 
+                if (languageChangeRestartPending) {
+                     console.log("[DEBUG] onend: languageChangeRestartPending is true. Restarting recognition.");
+                     languageChangeRestartPending = false; // Reset flag
+                     manualStopInProgress = false; // Reset flag
+                     // Reset count for the new language session
+                     recognitionRestartCount = 0;
+                     // Ensure UI reflects that we intend to restart
+                     document.getElementById('status-message').textContent = 'Restarting for language change...';
+                     // Start recognition directly
+                     startVoiceRecognition(); 
+                     return; // Skip other restart/stop logic
+                }
+                // --- End language change check ---
+
+                // Restart only if it wasn't a manual stop AND restart limit not reached
+                if (!manualStopInProgress && wasMicActive && recognitionRestartCount < MAX_RECOGNITION_RESTARTS) {
+                     recognitionRestartCount++;
+                     console.log(`[DEBUG] Attempting automatic restart (${recognitionRestartCount}/${MAX_RECOGNITION_RESTARTS}).`);
+                     setTimeout(() => {
+                        if (!manualStopInProgress && !micActive) {
+                             console.log("[DEBUG] Conditions met for restart. Calling startVoiceRecognition().");
+                             interimTranscript = '';
+                             document.getElementById('user-input').value = '';
+                             startVoiceRecognition();
+                        } else {
+                            console.log(`[DEBUG] Restart aborted in onend setTimeout. Conditions not met: manualStopInProgress=${manualStopInProgress}, micActive=${micActive}`);
+                            document.getElementById('mic-button').textContent = "🎤 Turn Mic On";
+                            if (!document.getElementById('status-message').textContent.includes("Error") && !document.getElementById('status-message').textContent.includes("active")) {
+                                 document.getElementById('status-message').textContent = "Microphone disabled.";
+                            }
+                            recognition = null;
+                        }
+                     }, 300);
+                } else {
+                     console.log("[DEBUG] No restart initiated in onend.");
+                     document.getElementById('mic-button').textContent = "🎤 Turn Mic On";
+                     if (!document.getElementById('status-message').textContent.includes("Error") && !document.getElementById('status-message').textContent.includes("active")) {
+                         document.getElementById('status-message').textContent = "Microphone disabled.";
+                     }
+                     recognition = null;
+                     manualStopInProgress = false;
+                }
+            };
+
+            try {
+                console.log("[DEBUG] Calling initial recognition.start()...");
+                recognition.start();
+            } catch (e) {
+                console.error("[DEBUG] Error on initial recognition.start():", e);
+                document.getElementById('status-message').textContent = "Speech recognition start error: " + e.message;
+                micActive = false;
+                document.getElementById('mic-button').textContent = "🎤 Turn Mic On";
+                recognition = null;
+            }
+        }
+
+        function toggleMicrophone() {
+            console.log("[DEBUG] toggleMicrophone called. Current micActive:", micActive);
+            if (!speechRecognitionSupported) {
+                document.getElementById('status-message').textContent = "Your browser does not support speech recognition";
+                return;
+            }
+
+            if (micActive) {
+                console.log("[DEBUG] Toggling OFF: Setting manualStopInProgress = true");
+                manualStopInProgress = true;
+                clearTimeout(speechPauseTimer);
+                speechPauseTimer = null;
+                interimTranscript = '';
+                document.getElementById('user-input').value = '';
+
+                if (recognition) {
+                    try {
+                        console.log("[DEBUG] Calling recognition.stop() due to toggle.");
+                        recognition.stop();
+                    } catch (e) {
+                        console.warn("[DEBUG] Error stopping recognition on toggle:", e);
+                        micActive = false;
+                        document.getElementById('mic-button').textContent = "🎤 Turn Mic On";
+                        document.getElementById('status-message').textContent = "Microphone disabled (stop error).";
+                        recognition = null;
+                    }
+                } else {
+                    console.log("[DEBUG] Recognition was null during toggle off, updating UI.");
+                    micActive = false;
+                    document.getElementById('mic-button').textContent = "🎤 Turn Mic On";
+                    document.getElementById('status-message').textContent = "Microphone disabled.";
+                    manualStopInProgress = false;
+                }
+            } else {
+                console.log("[DEBUG] Toggling ON: Calling startVoiceRecognition().");
+                manualStopInProgress = false;
+                startVoiceRecognition();
+            }
+        }
+
+        async function sendMessage(messageOverride = null) {
+            const userInput = messageOverride !== null ? messageOverride : document.getElementById('user-input').value.trim();
+
+            if (!userInput) {
+                console.warn("[DEBUG] sendMessage called with empty input.");
+                return;
+            }
+
+            addMessage('user', userInput);
+             if (messageOverride === null) {
+                document.getElementById('user-input').value = '';
+             }
+            document.getElementById('status-message').textContent = "Sending request...";
+
+            startLoadingAnimation();
+
+            const startTime = Date.now();
+
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 60000);
+
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: userInput }),
+                    signal: controller.signal
+                });
+
+                clearTimeout(timeoutId);
+
+                const endTime = Date.now();
+                console.log(`Recognition processing time: ${endTime - startTime} ms`);
+
+                stopLoadingAnimation();
+
+                if (!response.ok) {
+                    let errorData;
+                    try { errorData = await response.json(); } catch (e) {}
+                    const errorText = errorData?.error || await response.text() || `HTTP error ${response.status}`;
+                    throw new Error(`Server error: ${response.status} - ${errorText}`);
+                }
+
+                const data = await response.json();
+
+                if (data.image_url) {
+                    addImageMessage(data.image_url);
+                    document.getElementById('status-message').textContent = "Image generated.";
+                } else if (data.found_image_urls && Array.isArray(data.found_image_urls) && data.found_image_urls.length > 0) {
+                    // If the server returned an ARRAY of found images
+                    if(data.response) { // Show the message from the server (e.g., "Found 3 images...")
+                         addMessage('bot', data.response);
+                    }
+                    // Display each image from the array
+                    data.found_image_urls.forEach(url => {
+                        addImageMessage(url); 
+                    });
+                    document.getElementById('status-message').textContent = "Images found.";
+                } else if (data.found_video_details && Array.isArray(data.found_video_details) && data.found_video_details.length > 0) {
+                    // If the server returned an ARRAY with video details
+                    if(data.response) { // Show the text response ("Found video...")
+                         addMessage('bot', data.response);
+                    }
+                    // Add container for videos
+                    addVideoContainer(data.found_video_details);
+                    document.getElementById('status-message').textContent = "Videos found.";
+                } else if (data.response) {
+                    addMessage('bot', data.response);
+                    document.getElementById('status-message').textContent = "";
+
+                    const responseLanguage = data.language || 'ru';
+                    console.log(`[DEBUG] Received response language: ${responseLanguage}`);
+                    lastBotLanguage = responseLanguage;
+                    console.log(`[DEBUG] Updated lastBotLanguage to: ${lastBotLanguage}`);
+
+                    if (data.audio_url) {
+                        playAudio(data.audio_url);
+                    } else if (data.error_audio) {
+                        console.warn("Audio cannot be played:", data.error_audio);
+                        addErrorMessage("Failed to play audio: " + data.error_audio);
+                    }
+                } else if (data.error) {
+                    console.error("Server error:", data.error);
+                    addErrorMessage(data.error);
+                    document.getElementById('status-message').textContent = "Error";
+                } else {
+                    throw new Error('Unknown response format from server.');
+                }
+            } catch (error) {
+                console.error('❌ SendMessage error:', error);
+                stopLoadingAnimation();
+
+                let errorMsg;
+                if (error.name === 'AbortError') {
+                    errorMsg = 'Request took too long (timeout). Please try again.';
+                } else if (error.message.includes('Failed to fetch')) {
+                    errorMsg = 'Failed to connect to server. Check internet connection or server status.';
+                } else {
+                    errorMsg = 'Error processing request: ' + error.message;
+                }
+                addErrorMessage(errorMsg);
+                document.getElementById('status-message').textContent = "Error";
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                clearTimeout(speechPauseTimer);
+                speechPauseTimer = null;
+                sendMessage();
+            }
+        }
+
+        function addMessage(sender, text) {
+            const chatBox = document.getElementById('chat-box');
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('message', `${sender}-message`);
+            messageDiv.textContent = text;
+            chatBox.appendChild(messageDiv);
+            setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 0);
+        }
+
+        function addImageMessage(imageUrl) {
+            const chatBox = document.getElementById('chat-box');
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('image-message');
+
+            const img = document.createElement('img');
+            img.src = imageUrl;
+            img.alt = "Generated image";
+            img.onload = function() {
+                setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 0);
+            };
+            img.onerror = function() {
+                messageDiv.textContent = "[Failed to load image]";
+                setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 0);
+            }
+
+            messageDiv.appendChild(img);
+            chatBox.appendChild(messageDiv);
+            setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 0);
+        }
+
+        // Function to create ONE iframe inside a wrapper
+        function addVideoMessage(embedUrl, videoTitle = "Found video") {
+            const videoWrapper = document.createElement('div');
+            videoWrapper.classList.add('video-wrapper');
+
+            const iframe = document.createElement('iframe');
+            iframe.src = embedUrl;
+            iframe.title = videoTitle;
+            iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+            iframe.allowfullscreen = true;
+
+            videoWrapper.appendChild(iframe);
+            return videoWrapper; // Return the wrapper with iframe
+        }
+
+        // New function to add a CONTAINER with multiple videos
+        function addVideoContainer(videoDetailsArray) {
+            const chatBox = document.getElementById('chat-box');
+            const containerDiv = document.createElement('div');
+            containerDiv.classList.add('video-container-message'); // Class for the flex container
+
+            videoDetailsArray.forEach(details => {
+                const videoWrapper = addVideoMessage(details.youtube_embed_url, details.video_title);
+                containerDiv.appendChild(videoWrapper);
+            });
+
+            chatBox.appendChild(containerDiv);
+            setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 0);
+        }
+
+        function addErrorMessage(errorText) {
+            if (document.getElementById('status-message').textContent !== "Error") {
+                 document.getElementById('status-message').textContent = "Error";
+            }
+            const chatBox = document.getElementById('chat-box');
+            const messageDiv = document.createElement('div');
+            messageDiv.classList.add('error-message');
+            messageDiv.textContent = `⚠️ ${errorText}`;
+            chatBox.appendChild(messageDiv);
+             setTimeout(() => { chatBox.scrollTop = chatBox.scrollHeight; }, 0);
+        }
+
+        function playAudio(audioUrl) {
+            console.log("🎵 Adding to queue:", audioUrl);
+            audioQueue.push(audioUrl); // Add the new URL to the end of the queue
+            checkAndPlayNext(); // Try to start playing if nothing is currently playing
+        }
+
+        function checkAndPlayNext() {
+            // Check if nothing is playing AND there's something in the queue
+            if (currentAudioPlayer === null && audioQueue.length > 0) {
+                const nextUrl = audioQueue.shift(); // Get the next URL from the front of the queue
+                console.log("🔊 Playing next from queue:", nextUrl);
+
+                let audio = new Audio(nextUrl);
+                currentAudioPlayer = audio; // Set this as the currently playing audio
+                isAudioPlaying = true; // *** Set flag to true BEFORE playing ***
+                console.log("[DEBUG] isAudioPlaying set to true");
+
+                audio.onerror = (e) => {
+                    console.error("Audio playback error for:", nextUrl, e);
+                    addErrorMessage(`Failed to play audio for previous response.`);
+                    currentAudioPlayer = null; // Clear the lock
+                    isAudioPlaying = false;
+                    console.log("[DEBUG] isAudioPlaying set to false (onerror)");
+
+                    // If recognition was stopped for audio, restart it
+                    if (recognitionWasStoppedForAudio) {
+                        console.log("[DEBUG] Restarting recognition after audio error.");
+                        recognitionWasStoppedForAudio = false;
+                        manualStopInProgress = false; // Allow future auto-restarts
+                        setTimeout(startVoiceRecognition, 50); // Short delay
+                    }
+
+                    // IMPORTANT: Try to play the *next* item immediately after an error
+                    setTimeout(checkAndPlayNext, 100); // Keep this delay short
+                };
+
+                audio.onended = () => {
+                    console.log("[DEBUG] Audio playback finished for:", nextUrl);
+                    currentAudioPlayer = null; // Clear the lock, allowing the next item to play
+                    isAudioPlaying = false;
+                    console.log("[DEBUG] isAudioPlaying set to false (onended)");
+
+                    // If recognition was stopped for audio, restart it
+                    if (recognitionWasStoppedForAudio) {
+                        console.log("[DEBUG] Restarting recognition after audio finished.");
+                        recognitionWasStoppedForAudio = false;
+                        manualStopInProgress = false; // Allow future auto-restarts
+                        setTimeout(startVoiceRecognition, 50); // Short delay
+                    }
+
+                    // IMPORTANT: Check queue again after playback finishes
+                    checkAndPlayNext();
+                };
+
+                // *** Stop recognition BEFORE playing audio ***
+                if (micActive && recognition) {
+                    console.log("[DEBUG] Stopping recognition before playing audio.");
+                    recognitionWasStoppedForAudio = true;
+                    manualStopInProgress = true; // Prevent immediate auto-restart in onend
+                    recognition.stop();
+                }
+
+                // Attempt to play
+                audio.play().catch(err => {
+                    console.error("Error calling audio.play() for:", nextUrl, err);
+                    addErrorMessage("Could not start audio playback for previous response.");
+                    currentAudioPlayer = null; // Clear the lock on error
+                    isAudioPlaying = false;
+                    console.log("[DEBUG] isAudioPlaying set to false (play catch)");
+
+                    // If recognition was stopped for audio, try to restart it
+                    if (recognitionWasStoppedForAudio) {
+                        console.log("[DEBUG] Restarting recognition after audio play() error.");
+                        recognitionWasStoppedForAudio = false;
+                        manualStopInProgress = false; // Allow future auto-restarts
+                        setTimeout(startVoiceRecognition, 50); // Short delay
+                    }
+
+                    // Try to play the next item even if this one failed to start
+                    setTimeout(checkAndPlayNext, 100); // Keep this delay short
+                });
+            } else {
+                 // Log why playback didn't start (for debugging)
+                 if (currentAudioPlayer !== null) {
+                      console.log("[DEBUG] checkAndPlayNext: Audio is already playing:", currentAudioPlayer.src);
+                 } else if (audioQueue.length === 0) {
+                      console.log("[DEBUG] checkAndPlayNext: Queue is empty.");
+                 }
+            }
+        }
+
+        function handleVoiceCommand(text) {
+            const lowerText = text.toLowerCase().trim();
+            console.log(`[DEBUG] handleVoiceCommand received: "${lowerText}" | Current voiceChatActive: ${voiceChatActive}`);
+
+            let commandProcessed = false;
+            let isPrefixed = false;
+            const parts = lowerText.split(" ", 1); // Get only the first word
+            const potentialPrefix = parts[0];
+            const helpModalOverlay = document.getElementById('help-modal-overlay');
+            const isHelpModalOpen = helpModalOverlay.classList.contains('modal-active');
+
+            // Check if the first word is a known prefix
+            if (PREFIX_KEYWORDS_JS.includes(potentialPrefix)) {
+                const firstSpaceIndex = lowerText.indexOf(" ");
+                // Ensure space exists and is not the last character
+                if (firstSpaceIndex !== -1 && firstSpaceIndex < lowerText.length - 1) {
+                    isPrefixed = true;
+                    // Extract the command part AFTER the first space
+                    const commandPartLower = lowerText.substring(firstSpaceIndex + 1).trim();
+                    // Get original case text after prefix for potential use (e.g., image prompts)
+                    const originalTextWithoutPrefix = text.substring(text.toLowerCase().indexOf(" ") + 1).trim();
+
+                    console.log(`[DEBUG] Prefix '${potentialPrefix}' detected. Full command part checking: '${commandPartLower}'`);
+
+                    // Now use commandPartLower for all checks
+                    if (VOICE_ON_KEYWORDS_JS.includes(commandPartLower)) {
+                        console.log(`[DEBUG] Matched VOICE_ON_KEYWORDS_JS: "${commandPartLower}"`);
+                        if (!voiceChatActive) {
+                            voiceChatActive = true;
+                            addMessage('bot', "Voice chat activated.");
+                        } else { addMessage('bot', "Voice chat was already active."); }
+                        commandProcessed = true;
+                    } else if (VOICE_OFF_KEYWORDS_JS.includes(commandPartLower)) {
+                        console.log(`[DEBUG] Matched VOICE_OFF_KEYWORDS_JS: "${commandPartLower}"`);
+                        if (voiceChatActive) {
+                            voiceChatActive = false;
+                            addMessage('bot', "Voice chat deactivated.");
+                            if (micActive) {
+                                manualStopInProgress = true;
+                                toggleMicrophone();
+                            }
+                        } else { addMessage('bot', "Voice chat was already inactive."); }
+                        commandProcessed = true;
+                    }
+                    else if (HELP_KEYWORDS_JS.includes(commandPartLower)) {
+                        console.log(`[DEBUG] Matched HELP_KEYWORDS_JS: "${commandPartLower}"`);
+                        openHelpModal();
+                        commandProcessed = true;
+                    }
+                    // Language Switching Check
+                    else if (LANG_RU_KEYWORDS.includes(commandPartLower)) {
+                         console.log(`[DEBUG] Matched LANG_RU_KEYWORDS: comparing "${commandPartLower}" with ${JSON.stringify(LANG_RU_KEYWORDS)} -> TRUE`);
+                         setLanguage('ru', "Russian language set for recognition.");
+                         commandProcessed = true;
+                     } else if (LANG_EN_KEYWORDS.includes(commandPartLower)) {
+                         console.log(`[DEBUG] Matched LANG_EN_KEYWORDS: comparing "${commandPartLower}" with ${JSON.stringify(LANG_EN_KEYWORDS)} -> TRUE`);
+                         setLanguage('en', "English language set for recognition.");
+                         commandProcessed = true;
+                     } else if (LANG_FR_KEYWORDS.includes(commandPartLower)) {
+                          console.log(`[DEBUG] Matched LANG_FR_KEYWORDS: comparing "${commandPartLower}" with ${JSON.stringify(LANG_FR_KEYWORDS)} -> TRUE`);
+                         setLanguage('fr', "Langue française définie pour la reconnaissance.");
+                         commandProcessed = true;
+                     }
+                     // --- Find Image Check ---
+                     else if (FIND_IMAGE_KEYWORDS_JS.some(keyword => commandPartLower.startsWith(keyword))) {
+                         const matchedKeyword = FIND_IMAGE_KEYWORDS_JS.find(keyword => commandPartLower.startsWith(keyword));
+                         // Extract the query after the keyword from the original text without the prefix
+                         let searchQuery = '';
+                         const keywordIndexOriginal = originalTextWithoutPrefix.toLowerCase().indexOf(matchedKeyword);
+                         if (keywordIndexOriginal !== -1) {
+                             searchQuery = originalTextWithoutPrefix.substring(keywordIndexOriginal + matchedKeyword.length).trim();
+                         }
+
+                         if (searchQuery) {
+                             console.log(`[DEBUG] Prefixed FIND IMAGE command: Keyword='${matchedKeyword}', Query='${searchQuery}'`);
+                             // Send the *entire* original text (prefix + command + query) to the backend
+                             sendMessage(text); 
+                             commandProcessed = true;
+                         } else {
+                             console.log(`[DEBUG] Prefixed FIND IMAGE keyword '${matchedKeyword}' found, but query is missing.`);
+                             addErrorMessage(`Please specify what picture to find after the command "${potentialPrefix} ${matchedKeyword}".`);
+                             commandProcessed = true; // Mark as processed so it doesn't proceed further
+                         }
+                     }
+                     // --- End Find Image Check ---
+                     // --- Find Video Check ---
+                     else if (FIND_VIDEO_KEYWORDS_JS.some(keyword => commandPartLower.startsWith(keyword))) {
+                         const matchedKeyword = FIND_VIDEO_KEYWORDS_JS.find(keyword => commandPartLower.startsWith(keyword));
+                         // Extract the video query after the keyword
+                         let videoQuery = '';
+                         const keywordIndexOriginal = originalTextWithoutPrefix.toLowerCase().indexOf(matchedKeyword);
+                         if (keywordIndexOriginal !== -1) {
+                             videoQuery = originalTextWithoutPrefix.substring(keywordIndexOriginal + matchedKeyword.length).trim();
+                         }
+
+                         if (videoQuery) {
+                             console.log(`[DEBUG] Prefixed FIND VIDEO command: Keyword='${matchedKeyword}', Query='${videoQuery}'`);
+                             // Send the *entire* original text (prefix + command + query) to the backend
+                             sendMessage(text); 
+                             commandProcessed = true;
+                         } else {
+                             console.log(`[DEBUG] Prefixed FIND VIDEO keyword '${matchedKeyword}' found, but query is missing.`);
+                             addErrorMessage(`Please specify what video to find after the command "${potentialPrefix} ${matchedKeyword}".`);
+                             commandProcessed = true; // Mark as processed
+                         }
+                     }
+                     // --- End Find Video Check ---
+                     // Image Generation Check (only if no other command matched)
+                     else {
+                          console.log(`[DEBUG] No specific command match for "${commandPartLower}". Checking image generation keywords...`);
+                          let imageCommandFound = false;
+                          for (const imgKeyword of IMAGE_KEYWORDS_JS) {
+                              // Use startsWith on the command part
+                              if (commandPartLower.startsWith(imgKeyword)) {
+                                  // Extract prompt from the original case text *after* the image keyword
+                                  // Find the position of the keyword in the original non-prefix text
+                                  const keywordIndexOriginal = originalTextWithoutPrefix.toLowerCase().indexOf(imgKeyword);
+                                  let promptText = '';
+                                  if (keywordIndexOriginal !== -1) {
+                                      promptText = originalTextWithoutPrefix.substring(keywordIndexOriginal + imgKeyword.length).trim();
+                                  }
+
+                                  if (promptText) {
+                                      console.log(`[DEBUG] Prefixed IMAGE command: Keyword='${imgKeyword}', Prompt='${promptText}'`);
+                                      // Send the *full original text* (prefix + command + prompt) to backend
+                                      sendMessage(text);
+                                      imageCommandFound = true;
+                                      commandProcessed = true; // Mark overall command as processed
+                                      break;
+                                  } else {
+                                       console.log(`[DEBUG] Prefixed IMAGE keyword '${imgKeyword}' found, but prompt is missing.`);
+                                       addErrorMessage(`Please specify what to draw after the command "${potentialPrefix} ${imgKeyword}".`);
+                                       imageCommandFound = true;
+                                       commandProcessed = true; // Also mark as processed even if prompt is missing
+                                       break;
+                                  }
+                              }
+                          }
+                          if (!imageCommandFound) {
+                               console.log(`[DEBUG] No image keyword match found within "${commandPartLower}".`);
+                               // Let the final 'unrecognized' message handle this.
+                          }
+                     }
+
+                     // Final check if NO command was processed despite having a prefix
+                     if (isPrefixed && !commandProcessed) {
+                          console.log(`[DEBUG] Final check: Prefix '${potentialPrefix}' used, but command part '${commandPartLower}' was not recognized after all checks.`);
+                          addErrorMessage(`Command "${commandPartLower}" after prefix "${potentialPrefix}" not recognized. Use "chat help" for command list.`);
+                          commandProcessed = true; // Mark as processed to prevent fallback to sending as message
+                     }
+
+                } else {
+                     // Prefix found, but nothing after it.
+                     console.log(`[DEBUG] Prefix '${potentialPrefix}' found, but no command part followed.`);
+                     addErrorMessage(`Prefix "${potentialPrefix}" needs a command after it. Use "chat help" for command list.`);
+                     commandProcessed = true; // Mark as processed
+                }
+            } // End of prefix check block
+
+            // --- Handle Non-Prefixed Text --- (No changes needed here)
+            if (!isPrefixed && voiceChatActive) {
+                console.log("[DEBUG] No prefix, voice chat active. Sending text:", text);
+                 const endWordsQuestion = ['что', 'как', 'где', 'когда', 'почему', 'what', 'how', 'where', 'when', 'why', 'comment', 'où', 'quand', 'pourquoi'];
+                 if (endWordsQuestion.some(word => lowerText.endsWith(word)) && !text.endsWith('?')) {
+                    text += '?';
+                 }
+                sendMessage(text);
+                commandProcessed = true;
+            }
+
+            if (!isPrefixed && !voiceChatActive) {
+                 console.log("[DEBUG] No prefix and voice chat inactive. Ignoring text:", text);
+            }
+
+            if (commandProcessed && isHelpModalOpen) {
+                console.log("[DEBUG] Command processed, closing help modal.");
+                closeHelpModal();
+            }
+
+             if (commandProcessed && !lowerText.includes(IMAGE_KEYWORDS_JS.find(k => lowerText.includes(k)) || '###nevermatch###')) {
+                  document.getElementById('user-input').value = '';
+                  interimTranscript = '';
+             }
+
+             const shouldStopRecognition = (commandProcessed && !isPrefixed && voiceChatActive) ||
+                                          (commandProcessed && isPrefixed && VOICE_OFF_KEYWORDS_JS.includes(parts[0]?.toLowerCase()));
+
+             if (shouldStopRecognition && recognition && micActive) {
+                 console.log("[DEBUG] Stopping recognition cycle after processing valid speech/command.");
+                 try {
+                     clearTimeout(speechPauseTimer);
+                     speechPauseTimer = null;
+                     recognition.stop();
+                 } catch (e) {
+                     console.warn('[DEBUG] Error stopping recognition in handleVoiceCommand:', e);
+                 }
+             } else {
+                 console.log("[DEBUG] Not stopping recognition cycle (ignored input or non-stopping command).")
+             }
+        }
+
+        function startLoadingAnimation() {
+            const loadingIndicator = document.getElementById('loading-indicator');
+            loadingIndicator.style.display = 'block';
+            let dots = '';
+            clearInterval(loadingInterval);
+            loadingInterval = setInterval(() => {
+                dots = dots.length < 3 ? dots + '.' : '';
+                loadingIndicator.textContent = 'Processing' + dots;
+            }, 500);
+        }
+
+        function stopLoadingAnimation() {
+            clearInterval(loadingInterval);
+            loadingInterval = null;
+            document.getElementById('loading-indicator').style.display = 'none';
+        }
+
+        function openHelpModal() {
+            console.log("[DEBUG] Opening help modal.");
+            document.getElementById('help-modal-overlay').classList.add('modal-active');
+        }
+
+        function closeHelpModal() {
+             console.log("[DEBUG] Closing help modal.");
+             document.getElementById('help-modal-overlay').classList.remove('modal-active');
+        }
+
+        document.getElementById('help-modal-overlay').addEventListener('click', function(event) {
+             if (event.target === this) {
+                 closeHelpModal();
+             }
+         });
+
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && document.getElementById('help-modal-overlay').classList.contains('modal-active')) {
+                closeHelpModal();
+            }
+        });
+
+        window.onload = () => {
+             checkSpeechRecognitionSupport();
+        };
+
+        window.onbeforeunload = () => {
+            if (recognition) {
+                try {
+                    recognition.abort();
+                    console.log("[DEBUG] Aborted recognition on page unload.");
+                } catch (e) {}
+                recognition = null;
+            }
+            clearTimeout(speechPauseTimer);
+             clearInterval(loadingInterval);
+        };
+
+        // Function to explicitly set language and restart recognition
+        function setLanguage(langCode, userMessage) {
+            console.log(`[DEBUG] Setting language to: ${langCode}`);
+            lastBotLanguage = langCode;
+            console.log(`[DEBUG] Updated lastBotLanguage to: ${lastBotLanguage}`);
+            languageChangeRestartPending = true;
+            startVoiceRecognition();
+        }
+    </script>
+</body>
+</html>
