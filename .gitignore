@@ -135,4 +135,4 @@ cython_debug/
 /static/images/*
 !/static/images/.keep
 # Cursor files
-.cursorrules
+.cursor/rules
